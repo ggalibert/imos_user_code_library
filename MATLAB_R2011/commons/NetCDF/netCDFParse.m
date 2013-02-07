@@ -8,33 +8,38 @@ function dataset = netCDFParse (inputFileName,varargin)
 %
 %
 % Inputs:
-%    inputFileName : opendap URL or local address of the NetCDF file
+%   inputFileName : String of an opendap URL or local address of the NetCDF file
 %
-% Optional arguments:
-%    'parserOption' , [parserOption]
-%     [parserOption]   'all'       => to retrieve the entire file
-%                      'metadata'  => to retrieve metadata only
+%   varargin : optional arguments with (PropertyName,PropertyValue) syntax.
+%               Valid PropertyName are 'parserOption' and 'listVar':
+%                   PropertyValue for 'parserOption' can be:
+%                       'all'       => to retrieve metadata and data (default if not specified).
+%                       'metadata'  => to retrieve metadata only.
 %
-%
-%    'variable' , [varList]   => Parse only a specified set of variables
+%                   PropertyValue for 'listVar' is a cell array of Strings matching 
+%                   variable names in the NetCDF file.  => to only parse a specified set of variables.
+%                   If not initialised, all variables are parsed.
 %
 %
 % Outputs:
-%    gattname         : array of string of attribute names
-%    gattval          : array of string of attribute values
+%   dataset : Struct containing metadata and data information from the targeted NetCDF file
 %
 % Example:
-%   dataset = netCDFParse (inputFileName, 'parserOption' , [parserOption] , 'variable' , [varList] )
+%   dataset = netCDFParse (inputFileName, ['parserOption' , parserOption] , ['listVar' , varList] )
 %
+%   netCDFParse('/path/to/netcdfFile.nc')
+%   Will get the global attributes, variable attributes and data from all the variables found in the file.
 %
-%    netCDFParse('/path/to/netcdfFile.nc' , 'variables' , {'PSAL' , 'TEMP'})
-%    will only grab data and metadata for both PSAL and TEMP
+%   netCDFParse('/path/to/netcdfFile.nc' , 'listVar' , {'PSAL' , 'TEMP'})
+%   will get the global attributes, variable attributes and data from the listed variables PSAL and TEMP, 
+%   including the variable attributes and data from any dimension PSAL and TEMP are function of.
 %
-%    netCDFParse('/path/to/netcdfFile.nc' , 'parserOption' , 'all', 'variables' , {'PSAL' , 'TEMP'})
-%    will parse absolutely everything, because 'parserOption' has the value 'all'
+%   netCDFParse('/path/to/netcdfFile.nc' , 'parserOption' , 'all', 'listVar' , {'PSAL' , 'TEMP'})
+%   Same as above.
 %
-%    netCDFParse('/path/to/netcdfFile.nc' , 'parserOption' , 'metadata', 'variables' , { 'TEMP'})
-%    will parse all metadata plus data only for TEMP
+%   netCDFParse('/path/to/netcdfFile.nc' , 'parserOption' , 'metadata', 'listVar' , {'TEMP'})
+%   will parse the global attributes and the variable attributes from the listed variable TEMP,
+%   including the variable attributes from any dimension TEMP is function of.
 %
 % Other m-files required:
 % Other files required:nctoolbox, http://code.google.com/p/nctoolbox/
@@ -70,7 +75,7 @@ if optargin > 0
                 error('%s is a bad option for parserOption',parserOptionValue);
             end
             
-        elseif strcmpi(varargin{ii_optargin} , 'variables')
+        elseif strcmpi(varargin{ii_optargin} , 'listVar')
             variablesChoosenByUser = varargin{ii_optargin+1};
             
         else  error('%s is not a valid option',varargin{ii_optargin});
@@ -242,8 +247,8 @@ for iiVar=1:length(variablesList)
                 quality_control_set=1; %we assume it is IMOS
             end
             
-            % quality_control_set=1  =>1, IMOS standard set using the IODE flags,                 0 1 2 3 4 5 6 7 8 9,       byte, 99
-            % quality_control_set=2  =>2, ARGO quality control procedure,                         0 1 2 3 4 5 6 7 8 9,       byte, 99
+            % quality_control_set=1  =>1, IMOS standard set using the IODE flags,                 0 1 2 3 4 5 6 7 8 9,       byte, 9
+            % quality_control_set=2  =>2, ARGO quality control procedure,                         0 1 2 3 4 5 6 7 8 9,       byte, 9
             % quality_control_set=3  =>3, BOM quality control procedure (SST and Air-Sea fluxes), B C D E F G H L T U V X Z, char, 0
             
             if quality_control_set == 1     %IMOS standard set using the IODE flags
@@ -288,8 +293,8 @@ for iiVar=1:length(variablesList)
                 attNameQC = nctoolbox_datasetInfo.attributes(ancillaryVariables_qc);
                 quality_control_set = cell2mat(attNameQC(strcmpi('quality_control_set',attNameQC),2));
                 
-                % quality_control_set=1  =>1, IMOS standard set using the IODE flags,                 0 1 2 3 4 5 6 7 8 9,       byte, 99
-                % quality_control_set=2  =>2, ARGO quality control procedure,                         0 1 2 3 4 5 6 7 8 9,       byte, 99
+                % quality_control_set=1  =>1, IMOS standard set using the IODE flags,                 0 1 2 3 4 5 6 7 8 9,       byte, 9
+                % quality_control_set=2  =>2, ARGO quality control procedure,                         0 1 2 3 4 5 6 7 8 9,       byte, 9
                 % quality_control_set=3  =>3, BOM quality control procedure (SST and Air-Sea fluxes), B C D E F G H L T U V X Z, char, 0
                 
                 if quality_control_set == 1     %IMOS standard set using the IODE flags
